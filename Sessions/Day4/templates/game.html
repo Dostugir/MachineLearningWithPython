@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Guessing Game</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            animation: gradientBG 15s ease infinite;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            transform: translateY(0);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        h1 {
+            color: #fff;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #4CAF50; }
+            to { text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px #4CAF50; }
+        }
+
+        .input-group {
+            margin: 1.5rem 0;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        input {
+            padding: 0.8rem;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 5px;
+            width: 150px;
+            text-align: center;
+            margin-right: 10px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
+        }
+
+        button {
+            padding: 0.8rem 1.5rem;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 5px;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            background: #45a049;
+        }
+
+        button::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: rotate(45deg);
+            transition: all 0.3s ease;
+        }
+
+        button:hover::after {
+            transform: rotate(45deg) translate(50%, 50%);
+        }
+
+        .message {
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 5px;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .success { 
+            background: rgba(76, 175, 80, 0.3);
+            animation: successPulse 2s infinite;
+        }
+
+        @keyframes successPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .error { 
+            background: rgba(244, 67, 54, 0.3);
+            animation: errorShake 0.5s ease-in-out;
+        }
+
+        .info { 
+            background: rgba(33, 150, 243, 0.3);
+            animation: infoSlide 0.5s ease-out;
+        }
+
+        @keyframes infoSlide {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Number Guessing Game</h1>
+        <div id="game-area">
+            <div class="input-group">
+                <input type="number" id="guess-input" placeholder="Enter your guess" min="1" max="100">
+                <button onclick="makeGuess()">Guess!</button>
+            </div>
+            <div class="message" id="message"></div>
+            <button onclick="startNewGame()" id="new-game-btn" style="display: none;">New Game</button>
+        </div>
+    </div>
+
+    <script>
+        let currentGameId = null;
+        let gameActive = false;
+
+        async function startNewGame() {
+            try {
+                const response = await fetch('/new_game', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                currentGameId = data.game_id;
+                gameActive = true;
+                
+                document.getElementById('message').className = 'message info';
+                document.getElementById('message').textContent = 'Game started! Guess a number between 1 and 100';
+                document.getElementById('guess-input').value = '';
+                document.getElementById('new-game-btn').style.display = 'none';
+                document.getElementById('guess-input').disabled = false;
+            } catch (error) {
+                console.error('Error starting new game:', error);
+                document.getElementById('message').className = 'message error';
+                document.getElementById('message').textContent = 'Failed to start new game. Please try again.';
+            }
+        }
+
+        async function makeGuess() {
+            if (!gameActive) return;
+
+            const guessInput = document.getElementById('guess-input');
+            const guess = parseInt(guessInput.value);
+
+            if (isNaN(guess) || guess < 1 || guess > 100) {
+                document.getElementById('message').className = 'message error shake';
+                document.getElementById('message').textContent = 'Please enter a valid number between 1 and 100';
+                return;
+            }
+
+            try {
+                const response = await fetch('/make_guess', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        game_id: currentGameId,
+                        guess: guess
+                    })
+                });
+
+                const data = await response.json();
+                updateGameStatus(data);
+            } catch (error) {
+                console.error('Error making guess:', error);
+                document.getElementById('message').className = 'message error';
+                document.getElementById('message').textContent = 'Failed to submit guess. Please try again.';
+            }
+        }
+
+        function updateGameStatus(data) {
+            const messageDiv = document.getElementById('message');
+
+            switch(data.result) {
+                case 'correct':
+                    messageDiv.className = 'message success';
+                    messageDiv.textContent = 'Congratulations! You won!';
+                    endGame();
+                    break;
+                case 'low':
+                    messageDiv.className = 'message info';
+                    messageDiv.textContent = 'Too low! Try a higher number.';
+                    break;
+                case 'high':
+                    messageDiv.className = 'message info';
+                    messageDiv.textContent = 'Too high! Try a lower number.';
+                    break;
+            }
+        }
+
+        function endGame() {
+            gameActive = false;
+            document.getElementById('guess-input').disabled = true;
+            document.getElementById('new-game-btn').style.display = 'block';
+        }
+
+        window.onload = startNewGame;
+
+        document.getElementById('guess-input').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                makeGuess();
+            }
+        });
+    </script>
+</body>
+</html>
